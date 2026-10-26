@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reserva de Salas</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --azul: #2563eb;
+      --azul-claro: #eff6ff;
+      --azul-hover: #1d4ed8;
+      --verde: #16a34a;
+      --verde-claro: #f0fdf4;
+      --vermelho: #dc2626;
+      --vermelho-claro: #fef2f2;
+      --cinza-100: #f3f4f6;
+      --cinza-200: #e5e7eb;
+      --cinza-400: #9ca3af;
+      --cinza-600: #4b5563;
+      --cinza-800: #1f2937;
+      --branco: #ffffff;
+      --sombra: 0 1px 3px rgba(0,0,0,.12), 0 1px 2px rgba(0,0,0,.08);
+      --sombra-md: 0 4px 6px -1px rgba(0,0,0,.1), 0 2px 4px -2px rgba(0,0,0,.1);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--cinza-100);
+      color: var(--cinza-800);
+      min-height: 100vh;
+    }
+
+    header {
+      background: var(--azul);
+      color: var(--branco);
+      padding: 1.25rem 1.5rem;
+      box-shadow: var(--sombra-md);
+    }
+    header h1 { font-size: 1.4rem; font-weight: 700; }
+    header p  { font-size: .875rem; opacity: .85; margin-top: .2rem; }
+
+    main {
+      max-width: 760px;
+      margin: 1.5rem auto;
+      padding: 0 1rem 3rem;
+    }
+
+    /* Abas */
+    .tabs {
+      display: flex;
+      gap: .5rem;
+      margin-bottom: 1rem;
+    }
+    .tab {
+      flex: 1;
+      padding: .75rem 1rem;
+      border: 2px solid var(--cinza-200);
+      border-radius: .5rem;
+      background: var(--branco);
+      color: var(--cinza-600);
+      font-size: .9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .15s;
+      text-align: center;
+    }
+    .tab:hover { border-color: var(--azul); color: var(--azul); }
+    .tab.ativa {
+      background: var(--azul);
+      border-color: var(--azul);
+      color: var(--branco);
+    }
+
+    .painel { display: none; }
+    .painel.ativo { display: block; }
+
+    /* Card */
+    .card {
+      background: var(--branco);
+      border-radius: .75rem;
+      padding: 1.5rem;
+      box-shadow: var(--sombra);
+    }
+    .card h2 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 1.25rem;
+      color: var(--cinza-800);
+    }
+
+    /* Formulário */
+    .campo {
+      margin-bottom: 1rem;
+    }
+    label {
+      display: block;
+      font-size: .85rem;
+      font-weight: 600;
+      color: var(--cinza-600);
+      margin-bottom: .35rem;
+    }
+    input, select {
+      width: 100%;
+      padding: .6rem .9rem;
+      border: 1.5px solid var(--cinza-200);
+      border-radius: .5rem;
+      font-size: .95rem;
+      color: var(--cinza-800);
+      background: var(--branco);
+      transition: border-color .15s;
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--azul);
+    }
+
+    .linha-dupla {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    /* Botões */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: .4rem;
+      padding: .7rem 1.4rem;
+      border: none;
+      border-radius: .5rem;
+      font-size: .95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    .btn-primario {
+      background: var(--azul);
+      color: var(--branco);
+      width: 100%;
+      margin-top: .5rem;
+    }
+    .btn-primario:hover { background: var(--azul-hover); }
+
+    .btn-secundario {
+      background: var(--cinza-100);
+      color: var(--cinza-600);
+      padding: .55rem 1.2rem;
+      font-size: .85rem;
+    }
+    .btn-secundario:hover { background: var(--cinza-200); }
+
+    .btn-perigo {
+      background: transparent;
+      color: var(--vermelho);
+      border: 1.5px solid var(--vermelho);
+      padding: .35rem .8rem;
+      font-size: .8rem;
+      border-radius: .4rem;
+    }
+    .btn-perigo:hover { background: var(--vermelho-claro); }
+
+    /* Mensagens */
+    .mensagem {
+      padding: .85rem 1rem;
+      border-radius: .5rem;
+      font-size: .9rem;
+      font-weight: 500;
+      margin-top: 1rem;
+      display: none;
+    }
+    .mensagem.sucesso {
+      background: var(--verde-claro);
+      color: var(--verde);
+      border: 1px solid #bbf7d0;
+    }
+    .mensagem.erro {
+      background: var(--vermelho-claro);
+      color: var(--vermelho);
+      border: 1px solid #fecaca;
+    }
+    .mensagem.visivel { display: block; }
+
+    /* Salas Info */
+    .salas-info {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: .6rem;
+      margin-bottom: 1.25rem;
+    }
+    .sala-badge {
+      background: var(--azul-claro);
+      border: 1.5px solid #bfdbfe;
+      border-radius: .5rem;
+      padding: .5rem;
+      text-align: center;
+      font-size: .8rem;
+    }
+    .sala-badge strong { display: block; font-size: 1rem; color: var(--azul); }
+    .sala-badge small { color: var(--cinza-600); }
+
+    /* Consulta */
+    .filtro-data {
+      display: flex;
+      gap: .75rem;
+      align-items: flex-end;
+      margin-bottom: 1.25rem;
+    }
+    .filtro-data .campo { flex: 1; margin-bottom: 0; }
+
+    /* Lista de reservas */
+    .lista-reservas { display: flex; flex-direction: column; gap: .6rem; }
+
+    .reserva-item {
+      background: var(--cinza-100);
+      border: 1.5px solid var(--cinza-200);
+      border-radius: .5rem;
+      padding: .8rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .reserva-sala {
+      background: var(--azul);
+      color: var(--branco);
+      font-weight: 700;
+      font-size: 1.1rem;
+      width: 2.2rem;
+      height: 2.2rem;
+      border-radius: .4rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .reserva-info { flex: 1; }
+    .reserva-nome { font-weight: 600; font-size: .95rem; }
+    .reserva-horario { font-size: .82rem; color: var(--cinza-600); margin-top: .1rem; }
+
+    .vazia {
+      text-align: center;
+      color: var(--cinza-400);
+      padding: 2.5rem 1rem;
+      font-size: .95rem;
+    }
+
+    /* Modal de confirmação */
+    .overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.4);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 100;
+      display: none;
+    }
+    .overlay.visivel { display: flex; }
+    .modal {
+      background: var(--branco);
+      border-radius: .75rem;
+      padding: 1.75rem;
+      max-width: 380px;
+      width: 90%;
+      box-shadow: var(--sombra-md);
+    }
+    .modal h3 { font-size: 1.1rem; margin-bottom: .6rem; }
+    .modal p  { font-size: .9rem; color: var(--cinza-600); margin-bottom: 1.25rem; line-height: 1.5; }
+    .modal-acoes { display: flex; gap: .75rem; justify-content: flex-end; }
+
+    @media (max-width: 500px) {
+      .salas-info { grid-template-columns: repeat(2, 1fr); }
+      .linha-dupla { grid-template-columns: 1fr; }
+      .tabs { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🏢 Reserva de Salas</h1>
+  <p>Escritório — 4 salas disponíveis</p>
+</header>
+
+<main>
+  <div class="tabs">
+    <button class="tab ativa" onclick="trocarAba('reservar')">Nova Reserva</button>
+    <button class="tab" onclick="trocarAba('consultar')">Consultar por Dia</button>
+  </div>
+
+  <!-- Painel: Nova Reserva -->
+  <div class="painel ativo" id="painel-reservar">
+    <div class="card">
+      <h2>Nova Reserva</h2>
+
+      <div class="salas-info">
+        <div class="sala-badge"><strong>A</strong><small>até 10 pessoas</small></div>
+        <div class="sala-badge"><strong>B</strong><small>até 6 pessoas</small></div>
+        <div class="sala-badge"><strong>C</strong><small>até 4 pessoas</small></div>
+        <div class="sala-badge"><strong>D</strong><small>até 2 pessoas<br>máx. 1h</small></div>
+      </div>
+
+      <form id="form-reserva" onsubmit="fazerReserva(event)">
+        <div class="campo">
+          <label for="nome">Seu nome</label>
+          <input id="nome" type="text" placeholder="Ex.: Maria Lima" required />
+        </div>
+
+        <div class="campo">
+          <label for="sala">Sala</label>
+          <select id="sala" required>
+            <option value="">Escolha uma sala…</option>
+            <option value="A">Sala A — até 10 pessoas</option>
+            <option value="B">Sala B — até 6 pessoas</option>
+            <option value="C">Sala C — até 4 pessoas</option>
+            <option value="D">Sala D — até 2 pessoas (máx. 1h)</option>
+          </select>
+        </div>
+
+        <div class="campo">
+          <label for="data">Data</label>
+          <input id="data" type="date" required />
+        </div>
+
+        <div class="linha-dupla">
+          <div class="campo">
+            <label for="inicio">Início</label>
+            <input id="inicio" type="time" required />
+          </div>
+          <div class="campo">
+            <label for="fim">Término</label>
+            <input id="fim" type="time" required />
+          </div>
+        </div>
+
+        <div id="msg-reserva" class="mensagem"></div>
+        <button class="btn btn-primario" type="submit">Reservar Sala</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Painel: Consultar -->
+  <div class="painel" id="painel-consultar">
+    <div class="card">
+      <h2>Reservas do Dia</h2>
+
+      <div class="filtro-data">
+        <div class="campo">
+          <label for="data-consulta">Data</label>
+          <input id="data-consulta" type="date" oninput="consultarDia()" />
+        </div>
+      </div>
+
+      <div id="lista-reservas" class="lista-reservas">
+        <p class="vazia">Selecione uma data para ver as reservas.</p>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Modal de confirmação de cancelamento -->
+<div class="overlay" id="modal-overlay">
+  <div class="modal">
+    <h3>Cancelar reserva?</h3>
+    <p id="modal-descricao">Tem certeza que deseja cancelar esta reserva? Esta ação não pode ser desfeita.</p>
+    <div class="modal-acoes">
+      <button class="btn btn-secundario" onclick="fecharModal()">Não, manter</button>
+      <button class="btn btn-primario" style="width:auto;background:var(--vermelho)" id="modal-confirmar">Sim, cancelar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // --- Utilitários ---
+
+  function gerarId() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2);
+  }
+
+  function carregarReservas() {
+    try { return JSON.parse(localStorage.getItem('reservas')) || []; }
+    catch { return []; }
+  }
+
+  function salvarReservas(reservas) {
+    localStorage.setItem('reservas', JSON.stringify(reservas));
+  }
+
+  function horaParaMinutos(hhmm) {
+    const [h, m] = hhmm.split(':').map(Number);
+    return h * 60 + m;
+  }
+
+  function minutosParaHora(min) {
+    const h = String(Math.floor(min / 60)).padStart(2, '0');
+    const m = String(min % 60).padStart(2, '0');
+    return `${h}:${m}`;
+  }
+
+  function hoje() {
+    return new Date().toISOString().slice(0, 10);
+  }
+
+  function formatarData(iso) {
+    const [ano, mes, dia] = iso.split('-');
+    return `${dia}/${mes}/${ano}`;
+  }
+
+  // --- Validações ---
+
+  function temConflito(reservas, sala, data, inicio, fim, ignorarId = null) {
+    const iniNova = horaParaMinutos(inicio);
+    const fimNova = horaParaMinutos(fim);
+
+    return reservas.some(r => {
+      if (r.id === ignorarId) return false;
+      if (r.sala !== sala || r.data !== data) return false;
+      const iniExist = horaParaMinutos(r.inicio);
+      const fimExist = horaParaMinutos(r.fim);
+      // Conflito: sobreposição de intervalos
+      return iniNova < fimExist && fimNova > iniExist;
+    });
+  }
+
+  // --- Abas ---
+
+  function trocarAba(aba) {
+    document.querySelectorAll('.tab').forEach((t, i) => {
+      t.classList.toggle('ativa', (aba === 'reservar' && i === 0) || (aba === 'consultar' && i === 1));
+    });
+    document.getElementById('painel-reservar').classList.toggle('ativo', aba === 'reservar');
+    document.getElementById('painel-consultar').classList.toggle('ativo', aba === 'consultar');
+
+    if (aba === 'consultar') consultarDia();
+  }
+
+  // --- Mensagens ---
+
+  function mostrarMensagem(id, tipo, texto) {
+    const el = document.getElementById(id);
+    el.className = `mensagem ${tipo} visivel`;
+    el.textContent = texto;
+    if (tipo === 'sucesso') setTimeout(() => el.classList.remove('visivel'), 5000);
+  }
+
+  // --- Reserva ---
+
+  function fazerReserva(e) {
+    e.preventDefault();
+
+    const nome   = document.getElementById('nome').value.trim();
+    const sala   = document.getElementById('sala').value;
+    const data   = document.getElementById('data').value;
+    const inicio = document.getElementById('inicio').value;
+    const fim    = document.getElementById('fim').value;
+
+    const iniMin = horaParaMinutos(inicio);
+    const fimMin = horaParaMinutos(fim);
+
+    if (fimMin <= iniMin) {
+      mostrarMensagem('msg-reserva', 'erro', 'O horário de término deve ser depois do início.');
+      return;
+    }
+
+    const duracao = fimMin - iniMin;
+
+    if (sala === 'D' && duracao > 60) {
+      mostrarMensagem('msg-reserva', 'erro',
+        `A Sala D é para reuniões rápidas — máximo 1 hora. Você escolheu ${Math.floor(duracao/60)}h${duracao%60 ? duracao%60+'min' : ''}.`);
+      return;
+    }
+
+    const reservas = carregarReservas();
+
+    if (temConflito(reservas, sala, data, inicio, fim)) {
+      mostrarMensagem('msg-reserva', 'erro',
+        `A Sala ${sala} já está reservada nesse período. Escolha outro horário ou outra sala.`);
+      return;
+    }
+
+    const nova = { id: gerarId(), responsavel: nome, sala, data, inicio, fim };
+    reservas.push(nova);
+    salvarReservas(reservas);
+
+    mostrarMensagem('msg-reserva', 'sucesso',
+      `✓ Reserva confirmada! Sala ${sala} — ${formatarData(data)}, das ${inicio} às ${fim}.`);
+    document.getElementById('form-reserva').reset();
+    document.getElementById('data').value = hoje();
+  }
+
+  // --- Consulta ---
+
+  function consultarDia() {
+    const data = document.getElementById('data-consulta').value;
+    const lista = document.getElementById('lista-reservas');
+
+    if (!data) {
+      lista.innerHTML = '<p class="vazia">Selecione uma data para ver as reservas.</p>';
+      return;
+    }
+
+    const reservas = carregarReservas()
+      .filter(r => r.data === data)
+      .sort((a, b) => {
+        if (a.sala < b.sala) return -1;
+        if (a.sala > b.sala) return 1;
+        return horaParaMinutos(a.inicio) - horaParaMinutos(b.inicio);
+      });
+
+    if (reservas.length === 0) {
+      lista.innerHTML = `<p class="vazia">Nenhuma reserva em ${formatarData(data)}.</p>`;
+      return;
+    }
+
+    lista.innerHTML = reservas.map(r => `
+      <div class="reserva-item" id="item-${r.id}">
+        <div class="reserva-sala">${r.sala}</div>
+        <div class="reserva-info">
+          <div class="reserva-nome">${escapeHtml(r.responsavel)}</div>
+          <div class="reserva-horario">${r.inicio} – ${r.fim}</div>
+        </div>
+        <button class="btn btn-perigo" onclick="confirmarCancelamento('${r.id}', '${escapeHtml(r.responsavel)}', '${r.sala}', '${r.inicio}', '${r.fim}')">
+          Cancelar
+        </button>
+      </div>
+    `).join('');
+  }
+
+  function escapeHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
+  // --- Cancelamento ---
+
+  let idParaCancelar = null;
+
+  function confirmarCancelamento(id, responsavel, sala, inicio, fim) {
+    idParaCancelar = id;
+    document.getElementById('modal-descricao').textContent =
+      `Cancelar reserva de ${responsavel} — Sala ${sala}, das ${inicio} às ${fim}?`;
+    document.getElementById('modal-overlay').classList.add('visivel');
+  }
+
+  function fecharModal() {
+    idParaCancelar = null;
+    document.getElementById('modal-overlay').classList.remove('visivel');
+  }
+
+  document.getElementById('modal-confirmar').addEventListener('click', () => {
+    if (!idParaCancelar) return;
+    const reservas = carregarReservas().filter(r => r.id !== idParaCancelar);
+    salvarReservas(reservas);
+    fecharModal();
+    consultarDia();
+  });
+
+  // Fechar modal clicando fora
+  document.getElementById('modal-overlay').addEventListener('click', e => {
+    if (e.target === e.currentTarget) fecharModal();
+  });
+
+  // --- Inicialização ---
+
+  document.getElementById('data').value = hoje();
+  document.getElementById('data-consulta').value = hoje();
+</script>
+</body>
+</html>
